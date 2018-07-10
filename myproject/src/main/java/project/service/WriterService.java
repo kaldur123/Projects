@@ -1,5 +1,8 @@
 package project.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import project.dto.filters.UserFilter;
 import project.entity.Enums.UserRole;
 import project.entity.Writer;
 
@@ -16,6 +19,12 @@ public interface WriterService {
     Writer getById(Long id);
 
     List<Writer> findAll();
+
+    List<Writer> findWritersByFilter(UserFilter userFilter);
+
+    Page<Writer> findWritersByPage(Pageable pageable);
+
+    Page<Writer> findWritersByPage(UserFilter userFilter, Pageable pageable);
 
     Writer findByEmail(String email);
 

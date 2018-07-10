@@ -3,6 +3,7 @@ package project.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import project.entity.Dino;
+import project.exception.DinoNotFoundException;
 import project.repository.DinoRepository;
 import project.service.DinoService;
 
@@ -16,6 +17,11 @@ public class DinoServiceImpl implements DinoService {
     @Override
     public void saveDino(Dino dino) {
         dinoRepository.save(dino);
+    }
+
+    @Override
+    public Dino findDinoById(Long id) {
+        return dinoRepository.findById(id).orElseThrow(() -> new DinoNotFoundException("Dino with id [" + id + "] not found"));
     }
 
     @Override

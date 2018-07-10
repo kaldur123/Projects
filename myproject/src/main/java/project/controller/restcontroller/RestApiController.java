@@ -7,10 +7,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import project.dto.ArticleDto;
 import project.dto.CommentDto;
+import project.dto.ImageDto;
 import project.entity.Article;
 import project.entity.Comment;
+import project.entity.Image;
 import project.mapper.ArticleMapper;
 import project.mapper.CommentMapper;
+import project.mapper.ImageMapper;
 import project.service.*;
 
 import java.security.Principal;
@@ -59,10 +62,25 @@ public class RestApiController {
     public ResponseEntity<Void> saveComment(Principal principal, @RequestParam("text") String text, @PathVariable("id")Long id) {
         Comment comment = new Comment();
         comment.setText(text);
-        comment.setArticle(articleService.findById(id));
+        comment.setArticle(articleService.getById(id));
         comment.setWriter(writerService.findByEmail(principal.getName()));
         commentService.saveComment(comment);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @GetMapping("/articles/dino/{id}")
+    public List<ImageDto> getImages(@PathVariable("id") Long id) {
+        return imageService.findAllByDinoId(id).stream().map(p -> ImageMapper.convertToDto(p)).collect(Collectors.toList());
+    }
+
+    @PostMapping(value = "/articles/dino/{id}", consumes = {"multipart/form-data"})
+    public ResponseEntity<Void> saveImage(@RequestParam("file")MultipartFile file, @PathVariable("id") Long id) {
+        String url = cloudinaryService.uploadFile(file, dinoService.findById(id).getName());
+        Image image = new Image();
+        image.setImage(url);
+        image.setDino(dinoService.findById(id));
+        imageService.saveImage(image);
+        return new ResponseEntity<Void>(HttpStatus.CREATED);
     }
 
 //    @GetMapping("/test")

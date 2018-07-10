@@ -9,9 +9,9 @@ import javax.validation.constraints.NotEmpty;
 public class DinoDto {
 
     @UniqueDinoName
-    @NotEmpty(message = "Field must not be empty")
+    @NotEmpty(message = "Field Name is empty")
     private String name;
 
-    @NotEmpty(message = "Field must not be empty")
+    @NotEmpty(message = "Field Kind is empty")
     private String kind;
 }

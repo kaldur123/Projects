@@ -2,7 +2,6 @@ package project.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import project.validator.UniqueEmail;
 
 import javax.validation.constraints.*;
 
@@ -10,7 +9,7 @@ import javax.validation.constraints.*;
 @NoArgsConstructor
 public class WriterDto {
 
-    @NotEmpty(message = "Field must not be empty")
+//    @NotEmpty(message = "Field must not be empty")
     //@Size(min=1, message = "Field must not be empty")
     private String fullName;
 
@@ -18,16 +17,7 @@ public class WriterDto {
     @Max(value = 80, message = "Maximal AGE = 80")
     private int age;
 
-
-//    private String email;
-//
-//
-//    private String password;
-//
-//
-//    private String passwordConfirm;
-
-    @NotEmpty(message = "Field must not be empty")
+    @NotEmpty(message = "Field Country is empty")
     private String country;
 
 

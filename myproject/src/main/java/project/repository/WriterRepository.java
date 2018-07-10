@@ -1,6 +1,7 @@
 package project.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +13,7 @@ import project.entity.Writer;
 import java.util.List;
 
 @Repository
-public interface WriterRepository extends JpaRepository<Writer, Long> {
+public interface WriterRepository extends JpaRepository<Writer, Long>, JpaSpecificationExecutor<Writer> {
 
     @Query("select w from Writer w where w.email = :email")
     Writer findByEmail(@Param("email") String email);

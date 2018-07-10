@@ -1,6 +1,9 @@
 package project.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,19 +12,21 @@ import org.springframework.web.bind.annotation.*;
 import project.dto.ArticleDto;
 import project.dto.WriterDto;
 import project.dto.WriterDtoReg;
+import project.dto.filters.ArticleFilter;
 import project.entity.Article;
 import project.entity.Enums.UserRole;
 import project.entity.Writer;
+import project.exception.PageNotFoundException;
+import project.mapper.ImageMapper;
 import project.mapper.WriterMapper;
-import project.service.ArticleService;
-import project.service.CommentService;
-import project.service.DinoService;
-import project.service.WriterService;
+import project.service.*;
 
 import javax.validation.Valid;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @SessionAttributes({"countries", "nums"})
@@ -32,6 +37,8 @@ public class HomeController {
     @Autowired private DinoService dinoService;
 
     @Autowired private ArticleService articleService;
+
+    @Autowired private ImageService imageService;
 
     @GetMapping("/")
     public String home() {
@@ -54,7 +61,7 @@ public class HomeController {
     public String showRegister(Model model) {
         model.addAttribute("userDtoReg", new WriterDtoReg());
         List<Integer> num = new ArrayList<>();
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 18; i <= 100; i++) {
             num.add(i);
         }
         List<String> country = new ArrayList<>();
@@ -89,8 +96,48 @@ public class HomeController {
     }
 
     @GetMapping("/articles")
-    public String showArticles(Model model) {
-        model.addAttribute("articles", articleService.findAll());
+    public String showArticles(Model model, @PageableDefault Pageable pageable) {
+//        model.addAttribute("articles", articleService.findAll());
+        model.addAttribute("filter", new ArticleFilter());
+        Page<Article> page = articleService.findAllByPage(pageable);
+        int currentPage = page.getNumber();
+        if (currentPage > page.getTotalPages()) {
+            throw new PageNotFoundException("Page not found");
+        }
+        int begin = Math.max(1, currentPage - 2);
+        int end = Math.min(begin + 2, page.getNumber());
+
+        model.addAttribute("beginIndex", begin);
+        model.addAttribute("endIndex", end);
+        model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("count", Arrays.asList(5, 10, 15, 20));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("pages", page);
+        model.addAttribute("articles", page.getContent());
+        model.addAttribute("title", new ArticleFilter().getSearchTitle());
+        model.addAttribute("dinoName", new ArticleFilter().getSearchDinoName());
+        return "articles";
+    }
+
+    @GetMapping("/articles/search")
+    public String showArticlesByFilter(@ModelAttribute("filter") ArticleFilter articleFilter, Model model, Pageable pageable) {
+        Page<Article> page = articleService.findAllByFilter(articleFilter, pageable);
+        int currentPage = page.getNumber();
+        if (currentPage > page.getTotalPages() - 1) {
+            throw new PageNotFoundException("Page not found");
+        }
+        int begin = Math.max(1, currentPage - 2);
+        int end = Math.min(begin + 2, page.getNumber());
+
+        model.addAttribute("beginIndex", begin);
+        model.addAttribute("endIndex", end);
+        model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("count", Arrays.asList(5, 10, 15, 20));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("pages", page);
+        model.addAttribute("articles", page.getContent());
+        model.addAttribute("title", articleFilter.getSearchTitle());
+        model.addAttribute("dinoName", articleFilter.getSearchDinoName());
         return "articles";
     }
 
@@ -108,6 +155,15 @@ public class HomeController {
     public String deleteArticle(@ModelAttribute("article") Article article) {
         articleService.deleteArticle(articleService.findById(article.getId()));
         return "redirect:/articles";
+    }
+
+    @GetMapping("/articles/dino/{id}")
+    public String showDinoImages(@PathVariable("id") Long id, Model model, Principal principal) {
+        model.addAttribute("dinoId", dinoService.findDinoById(id).getId());
+        if (principal != null) {
+            model.addAttribute("writerName", principal.getName());
+        }
+        return "dino-images";
     }
 
 //    @GetMapping("/test")

@@ -10,6 +10,8 @@ public interface DinoService {
 
     Dino findById(Long id);
 
+    Dino findDinoById(Long id);
+
     Dino findDinoByName(String name);
 
     List<Dino> findAll();

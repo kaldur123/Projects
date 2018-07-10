@@ -1,6 +1,9 @@
 package project.controller.jspcontroller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,9 +11,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import project.dto.DinoDto;
 import project.dto.WriterDto;
+import project.dto.filters.UserFilter;
 import project.entity.Dino;
 import project.entity.Enums.UserRole;
 import project.entity.Writer;
+import project.exception.PageNotFoundException;
 import project.mapper.DinoMapper;
 import project.mapper.WriterMapper;
 import project.service.DinoService;
@@ -19,6 +24,7 @@ import project.service.WriterService;
 import javax.validation.Valid;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Controller
@@ -48,7 +54,7 @@ public class AdminController {
         model.addAttribute("user", WriterMapper.convertToDto(writerService.findByEmail(principal.getName())));
         model.addAttribute("userId", writerService.findByEmail(principal.getName()).getId());
         List<Integer> num = new ArrayList<>();
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 18; i <= 100; i++) {
             num.add(i);
         }
         List<String> countries = new ArrayList<>();
@@ -81,8 +87,58 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public String showAllUsers(Model model) {
-        model.addAttribute("users", writerService.findUsersByRole(UserRole.ROLE_USER));
+    public String showAllUsers(Model model, @PageableDefault Pageable pageable) {
+//        model.addAttribute("users", writerService.findUsersByRole(UserRole.ROLE_USER));
+        model.addAttribute("filter", new UserFilter());
+        Page<Writer> page = writerService.findWritersByPage(pageable);
+        int currentPage = page.getNumber();
+        if (currentPage > page.getTotalPages() - 1) {
+            throw new PageNotFoundException("Page not found");
+        }
+
+        int begin = Math.max(1, currentPage - 2);
+        int end = Math.min(begin + 2, page.getNumber());
+
+        model.addAttribute("beginIndex", begin);
+        model.addAttribute("endIndex", end);
+
+        model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("count", Arrays.asList(5, 10, 15, 20));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("pages", page);
+        model.addAttribute("users", page.getContent());
+        model.addAttribute("fullName", new UserFilter().getSearchFullName());
+        model.addAttribute("age", new UserFilter().getSearchAge());
+        model.addAttribute("email", new UserFilter().getSearchEmail());
+        model.addAttribute("country", new UserFilter().getSearchCountry());
+
+        return "users";
+    }
+
+    @GetMapping("/users/search")
+    public String showAllUsersByFilter(@ModelAttribute("filter") UserFilter userFilter, Model model, Pageable pageable) {
+//        model.addAttribute("users", writerService.findUsersByRole(UserRole.ROLE_USER));
+        Page<Writer> page = writerService.findWritersByPage(userFilter, pageable);
+        int currentPage = page.getNumber();
+        if (currentPage > page.getTotalPages() - 1) {
+            throw new PageNotFoundException("Page not found");
+        }
+
+        int begin = Math.max(1, currentPage - 2);
+        int end = Math.min(begin + 2, page.getNumber());
+
+        model.addAttribute("beginIndex", begin);
+        model.addAttribute("endIndex", end);
+
+        model.addAttribute("size", userFilter.getSize());
+        model.addAttribute("count", Arrays.asList(5, 10, 15, 20));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("pages", page);
+        model.addAttribute("users", page.getContent());
+        model.addAttribute("fullName", userFilter.getSearchFullName());
+        model.addAttribute("age", userFilter.getSearchAge());
+        model.addAttribute("email", userFilter.getSearchEmail());
+        model.addAttribute("country", userFilter.getSearchCountry());
         return "users";
     }
 
@@ -104,7 +160,7 @@ public class AdminController {
         model.addAttribute("user", WriterMapper.convertToDto(writerService.findById(id)));
         model.addAttribute("userId", id);
         List<Integer> num = new ArrayList<>();
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 18; i <= 100; i++) {
             num.add(i);
         }
         List<String> countries = new ArrayList<>();

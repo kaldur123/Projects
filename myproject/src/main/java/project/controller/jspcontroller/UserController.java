@@ -1,13 +1,16 @@
 package project.controller.jspcontroller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import project.dto.ArticleDto;
 import project.dto.WriterDto;
+import project.dto.filters.ArticleFilter;
 import project.entity.Article;
 import project.entity.Dino;
 import project.entity.Writer;
@@ -54,7 +57,7 @@ public class UserController {
         model.addAttribute("user", WriterMapper.convertToDto(writerService.findByEmail(principal.getName())));
         model.addAttribute("userId", writerService.findByEmail(principal.getName()).getId());
         List<Integer> num = new ArrayList<>();
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 18; i <= 100; i++) {
             num.add(i);
         }
         List<String> countries = new ArrayList<>();
@@ -115,6 +118,13 @@ public class UserController {
     @GetMapping("/my-articles")
     public String showMyArticles(Principal principal, Model model) {
         model.addAttribute("articles", articleService.findAllByUserId(writerService.findByEmail(principal.getName()).getId()));
+        model.addAttribute("filter", new ArticleFilter());
+        return "user-articles";
+    }
+
+    @GetMapping("/my-articles/search")
+    public String showArticlesByFilter(Model model, Principal principal, @ModelAttribute("filter") ArticleFilter articleFilter) {
+        model.addAttribute("articles", articleService.findByFilter(articleFilter, writerService.findByEmail(principal.getName()).getId()));
         return "user-articles";
     }
 
@@ -127,7 +137,7 @@ public class UserController {
     }
 
     @PostMapping("/my-articles/{id}")
-    public String saveEdit(@Valid @ModelAttribute("articleDto") ArticleDto articleDto, @RequestParam("id") Long id, BindingResult br) {
+    public String saveEdit(@ModelAttribute("articleDto") ArticleDto articleDto, @PathVariable("id") Long id, BindingResult br) {
         if (br.hasErrors()) {
             return "article-edit";
         }
